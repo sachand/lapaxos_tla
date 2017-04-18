@@ -1,5 +1,5 @@
-List all TODOs. Once addressed, I shall comment saying so (Done?). If the issue is resolved,
-the one who raised should remove the question mark.
+@heading {List all TODOs. Once addressed, I shall comment saying so (Done?). If the issue is resolved,
+the one who raised should remove the question mark.}
 
 1) AL: at end of setup for Proposer, you need to set pc to "run_while".
 
