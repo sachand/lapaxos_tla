@@ -1,3 +1,6 @@
+List all TODOs. Once addressed, I shall comment saying so. If the issue is resolved,
+we can mark it done and move it to DONE TODOs.
+
 1) AL: at end of setup for Proposer, you need to set pc to "run_while".
 
   (I assume you didn't "check" this spec, besides syntax checking)
@@ -15,10 +18,10 @@
   such generality is why Kain has some actions that just update pc.
 
   short cut in general could be done, but not important now.
-    >> "start" and "end" are two states that all processes will have.
-    To make that more explicit, I've pulled the pc[a] = "setup" from
-    setups to definition of Init. I think it makes more sense because
-    spec of setup should look exactly like the code of setup.
+"start" and "end" are two states that all processes will have.
+To make that more explicit, I've pulled the pc[a] = "setup" from
+setups to definition of Init. I think it makes more sense because
+spec of setup should look exactly like the code of setup.
 
 3) AL: there are still other inconsistent uses of pc:
   e.g., some test != and some test =
