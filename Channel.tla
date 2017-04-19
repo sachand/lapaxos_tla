@@ -70,6 +70,15 @@ PROOF OMITTED
   If two messages were sent and received from the same source to the
   same receiver on a FIFO channel, they are received in the order
   they were sent according to their timestamp.
+  
+   _S_           _R_ 
+    |             |
+    |-----m1----->| i1
+    |             |
+    |-----m2----->| i2
+    |             |
+    
+    THEN i1 < i2
 *)
 THEOREM FIFO_channel_1 ==
   ASSUME NEW m1 \in sent, NEW m2 \in sent,
@@ -87,6 +96,15 @@ PROOF OMITTED
   on a FIFO channel, and the earlier message has been received,
   then, the later message cannot have been received before the
   earlier one.
+  
+   _S_           _R_ 
+    |             |
+    |-----m1----->| i1
+    |             |
+    |-----m2      |
+    |             |
+    
+    THEN m2's index cannot be < i1 at the receiver.
 *)
 THEOREM FIFO_channel_2 ==
   ASSUME NEW m1 \in sent, NEW m2 \in sent,
@@ -100,10 +118,19 @@ PROOF OMITTED
 
 (*
   If two messages were sent from the same source to the same receiver
-  on a FIFO channel, and the earlier message has not been received,
+  on a RELIABLE FIFO channel, and the earlier message has not been received,
   then, the later message cannot have been received too.
+
+   _S_           _R_ 
+    |             |
+    |-----m1      |
+    |             |
+    |-----m2      |
+    |             |
+    
+    IF m1 isn't received, neither is m2.
 *)
-THEOREM FIFO_channel_3 ==
+THEOREM RELIABLE_FIFO_channel_1 ==
   ASSUME NEW m1 \in sent, NEW m2 \in sent,
          m1.from = m2.from,
          m1.to = m2.to,
@@ -114,11 +141,20 @@ PROOF OMITTED
 
 (*
   If two messages were sent from the same source to the same receiver
-  on a FIFO channel, and the later message has been received,
+  on a RELIABLE FIFO channel, and the later message has been received,
   then, the earlier message must have been received at some point
   already.
+
+   _S_           _R_ 
+    |             |
+    |-----m1      |
+    |             |
+    |-----m2----->| i2
+    |             |
+    
+    THEN m1 must be in receiver's received queue at some index < i2
 *)
-THEOREM FIFO_channel_4 ==
+THEOREM RELIABLE_FIFO_channel_2 ==
   ASSUME NEW m1 \in sent, NEW m2 \in sent,
          m1.from = m2.from,
          m1.to = m2.to,
