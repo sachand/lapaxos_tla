@@ -6,8 +6,15 @@ CONSTANTS
   Learners,
   Proposers
 
+\* States of Program Counter
+CONSTANTS
+  START,
+  END,
+  PROPOSER_RUN_WHILE,
+  PROPOSER_AWAIT
+
 VARIABLES
-  pc,                           \* Program Counter
+  pc,
   acceptor_learners,
   proposer_acceptors, proposer_n, proposer_majority
 
@@ -34,7 +41,7 @@ Acceptor_receive_prepare(a) ==
        IF \A m2 \in sent_by(a): m2.body[0] = "respond" => m.body[1] > m2.body[1] THEN
          Send(a, {m.body[2]}, <<"respond", m.body[1], maxprop>>)
        ELSE UNCHANGED << sent >>
-    /\ pc[a] # "end"
+    /\ pc[a] # END
     /\ UNCHANGED << pc, acceptor_learners, proposer_acceptors, proposer_n, proposer_majority >>
 
 Acceptor_receive_accept(a) ==
@@ -46,20 +53,20 @@ Acceptor_receive_accept(a) ==
          /\ m2.body[1] > m.body[1]
          THEN Send(a, acceptor_learners[a], <<"accepted", m.body[1], m.body[2]>>)
          ELSE UNCHANGED << sent >>
-    /\ pc[a] # "end"
+    /\ pc[a] # END
     /\ UNCHANGED << pc, acceptor_learners, proposer_acceptors, proposer_n, proposer_majority >>
 
 Acceptor_receive_done(a) == \* Temporary. Goes after abstracting receive and act/ENABLED separately
   \E m \in sent_to(a):
     /\ Receive(a, m)
     /\ m.body[0] = "done"
-    /\ pc[a] # "end"
+    /\ pc[a] # END
     /\ UNCHANGED << sent, pc, acceptor_learners, proposer_acceptors, proposer_n, proposer_majority >>
 
 Acceptor_run_end(a) ==
   /\ \E m \in received[a]: m.body[0] = "done"
-  /\ pc[a] = "start"
-  /\ pc' = [pc EXCEPT![a] = "end"]
+  /\ pc[a] = START
+  /\ pc' = [pc EXCEPT![a] = END]
   /\ UNCHANGED << sent, received, acceptor_learners, proposer_acceptors, proposer_n, proposer_majority >>
 
 (************************************************************************)
@@ -70,22 +77,22 @@ Proposer_setup(p(*, Acceptors*)) ==
 
 Proposer_run_while(p) ==
   /\ ~\E m \in received[p]: m.body[0] = "done"
-  /\ pc[p] \in {"start"}
-  /\ pc' = [pc EXCEPT![p] = "proposer_run_while"]
+  /\ pc[p] \in {START}
+  /\ pc' = [pc EXCEPT![p] = PROPOSER_RUN_WHILE]
   /\ UNCHANGED << sent, received, acceptor_learners, proposer_acceptors, proposer_n, proposer_majority >>
 
 Proposer_run_end(p) ==
   /\ \E m \in received[p]: m.body[0] = "done"
-  /\ pc[p] \in {"start"}
-  /\ pc' = [pc EXCEPT![p] = "end"]
+  /\ pc[p] \in {START}
+  /\ pc' = [pc EXCEPT![p] = END]
   /\ UNCHANGED << sent, received, acceptor_learners, proposer_acceptors, proposer_n, proposer_majority >>
 
 Proposer_to_consent_start(p) ==
   /\ IF proposer_n[p] = Undefined THEN proposer_n' = [proposer_n EXCEPT![p] = <<0, p>>]
                          ELSE proposer_n' = [proposer_n EXCEPT![p] = <<proposer_n[p][0] + 1, p>>]
   /\ Send(p, proposer_majority[p], <<"prepare", proposer_n'[p]>>)  
-  /\ pc[p] \in {"proposer_run_while"}
-  /\ pc' = [pc EXCEPT![p] = "proposer_await"]
+  /\ pc[p] \in {PROPOSER_RUN_WHILE}
+  /\ pc' = [pc EXCEPT![p] = PROPOSER_AWAIT]
   /\ UNCHANGED << received, acceptor_learners, proposer_acceptors, proposer_majority >>
 
 Proposer_to_consent_await(p) ==
@@ -98,19 +105,19 @@ Proposer_to_consent_await(p) ==
      responded == {m2.from: m2 \in {m2 \in received[p] : m2.body[0] = "respond" /\ m2.body[1] = proposer_n[p]}} IN
      IF S = {} THEN Send(p, responded, <<"accept", proposer_n[p], anyof({1..100})>>)
                ELSE Send(p, responded, <<"accept", proposer_n[p], anyof(S)>>)
-  /\ pc[p] = "proposer_await"
-  /\ pc' = [pc EXCEPT![p] = "start"]
+  /\ pc[p] = PROPOSER_AWAIT
+  /\ pc' = [pc EXCEPT![p] = START]
   /\ UNCHANGED << received, acceptor_learners, proposer_acceptors, proposer_n, proposer_majority >>
 
 Proposer_to_consent_end(p) ==
   /\ ~(Cardinality({m.from: m \in {m \in received[p] : m.body[0] = "respond" /\ m.body[1] = proposer_n[p]}}) > Cardinality(proposer_acceptors[p]) \div 2)
-  /\ pc[p] = "proposer_await"
-  /\ pc' = [pc EXCEPT![p] = "start"]
+  /\ pc[p] = PROPOSER_AWAIT
+  /\ pc' = [pc EXCEPT![p] = START]
   /\ UNCHANGED << sent, received, acceptor_learners, proposer_acceptors, proposer_n, proposer_majority >>
 
 Proposer_receive(p) ==
   \E m \in sent_to(p):
-    /\ pc[p] # "end"
+    /\ pc[p] # END
     /\ Receive(p, m)
     /\ UNCHANGED << sent, pc, acceptor_learners, proposer_acceptors, proposer_n, proposer_majority >>
 
@@ -119,7 +126,7 @@ Init == \* Conjunction of setups
   /\ \A a \in Acceptors: Acceptor_setup(a)
   /\ \A p \in Proposers: Proposer_setup(p)
   /\ Channel_setup
-  /\ \A p \in Processes: pc[p] = "start"
+  /\ \A p \in Processes: pc[p] = START
 
 Next == \* Disjunction of all actions above
   \/ \E a \in Acceptors:
